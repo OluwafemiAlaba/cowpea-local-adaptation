@@ -1,4 +1,4 @@
-# Cowpea local adaptation: minimal reproducibility package
+# Cowpea local adaptation
 
 Final cohort: 460 cowpea accessions; 41,654 array SNPs; 92 climate variables.
 
