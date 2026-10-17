@@ -1,0 +1,13 @@
+*.bed
+*.bim
+*.fam
+*.rds
+*.RDS
+*.tif
+*.vcf
+*.assoc.txt
+*.tar.gz
+.Rhistory
+.RData
+__pycache__/
+.DS_Store

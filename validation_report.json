@@ -1,0 +1,9 @@
+{
+  "manifest_files_verified": 180,
+  "accessions": 460,
+  "SNPs": 41654,
+  "climate_variables": 92,
+  "sample_order": "verified by ID",
+  "full_model_rerun": false,
+  "status": "PASS"
+}
