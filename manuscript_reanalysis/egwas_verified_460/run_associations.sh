@@ -10,7 +10,8 @@
 set -euo pipefail
 module load gemma/0.98.5
 export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1
-root=/bigdata/koeniglab/oluwafea/project/data/cowpealandraces_490
+project_root="${COWPEA_ROOT:-$HOME/data/cowpealandrace_460}"
+root="$project_root/manuscript_reanalysis"
 cd "$root/egwas_verified_460"
 geno="$root/genotype_rebuild_460_20261014/cowpea460_verified_geno005_maf001"
 sha256sum --status -c input/genotype_sha256.txt

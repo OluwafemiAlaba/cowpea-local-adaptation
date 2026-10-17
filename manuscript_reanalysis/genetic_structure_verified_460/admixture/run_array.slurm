@@ -7,7 +7,8 @@
 #SBATCH --array=0-99%10
 set -euo pipefail
 module load admixture/1.3.0
-base=/bigdata/koeniglab/oluwafea/project/data/cowpealandraces_490/genetic_structure_verified_460/admixture
+project_root="${COWPEA_ROOT:-$HOME/data/cowpealandrace_460}"
+base="$project_root/manuscript_reanalysis/genetic_structure_verified_460/admixture"
 k=$((SLURM_ARRAY_TASK_ID / 10 + 1))
 rep=$((SLURM_ARRAY_TASK_ID % 10 + 1))
 seed=$((460000 + k * 100 + rep))

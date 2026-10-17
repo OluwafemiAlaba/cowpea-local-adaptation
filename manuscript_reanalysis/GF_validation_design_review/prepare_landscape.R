@@ -7,6 +7,14 @@ dir.create('landscape_inputs',showWarnings=FALSE)
 tmp<-file.path('landscape_tmp',paste0('prepare_',Sys.getpid()));dir.create(tmp,recursive=TRUE)
 terraOptions(tempdir=tmp,memfrac=.1,memmax=2)
 m<-read.csv('historical_manifest.csv');m<-m[match(gf_predictors,m$predictor),]
+# Expand portable home-relative raster paths before GDAL/terra reads.
+project_root <- path.expand(Sys.getenv('COWPEA_ROOT', '~/data/cowpealandrace_460'))
+for (field in c('path_north','path_south')) {
+  m[[field]] <- vapply(m[[field]], function(p) {
+    prefix <- '~/data/cowpealandrace_460/'
+    if (startsWith(p, prefix)) file.path(project_root, substring(p, nchar(prefix)+1L)) else path.expand(p)
+  }, character(1))
+}
 ref<-rast('projection_climate/wc2.1_30s_bioc_ACCESS-CM2_ssp126_2021-2040_Africa_selected.tif')[[1]]
 stopifnot(abs(res(ref)[1]-1/120)<1e-10)
 # VRT windows remain disk-backed; crop() on a list of global rasters can

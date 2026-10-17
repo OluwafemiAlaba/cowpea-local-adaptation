@@ -6,7 +6,8 @@
 #SBATCH --time=00:10:00
 set -euo pipefail
 module load plink/1.90b6.25
-base=/bigdata/koeniglab/oluwafea/project/data/cowpealandraces_490
+project_root="${COWPEA_ROOT:-$HOME/data/cowpealandrace_460}"
+base="$project_root/manuscript_reanalysis"
 cd "$base/genetic_structure_verified_460/admixture"
 mkdir -p input
 plink --bfile "$base/genotype_rebuild_460_20261014/cowpea460_verified_geno005_maf001" --extract "$base/genotype_rebuild_460_20261014/structure_LD02.prune.in" --allow-extra-chr --keep-allele-order --make-bed --memory 1500 --threads 1 --out input/primary460
