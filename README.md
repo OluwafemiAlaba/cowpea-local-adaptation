@@ -1,29 +1,73 @@
-# Cowpea local adaptation
+# Cowpea local adaptation and genomic offset
 
-Final cohort: 460 cowpea accessions; 41,654 array SNPs; 92 climate variables.
+Selected R and shell scripts supporting the cowpea manuscript: **460 accessions, 41,654 array SNPs and 92 climate variables**. The numbered layout follows the organization of the [Populus repository](https://github.com/jingwanglab/Populus_genomic_prediction_climate_vulnerability); the analyses and settings are from this cowpea study.
 
-## Files
+## Setup
 
-The GitHub archive contains 35 core analysis scripts and setup/validation helpers. The Dryad archive contains final processed inputs, the annotation needed for gene mapping, and key result tables. Extract both archives into the same directory; their `manuscript_reanalysis/` paths match.
+Extract the associated Dryad data into `~/data/cowpealandrace_460`, retaining `manuscript_reanalysis/`. Run commands from this repository's root. Set `COWPEA_ROOT` and `COWPEA_OUTPUT` to absolute paths to change the data and output locations. By default, new results go into `reproduced/` beside the deposited inputs.
 
-Extract both archives under `~/data/`; they share the top-level folder `cowpealandrace_460`. The standard project root is `~/data/cowpealandrace_460`, with analysis folders under `manuscript_reanalysis/`. From the project root, run `python3 verify_minimal.py` to check file hashes and core sample/marker counts, and `python3 configure_paths.py` to check the layout. To use a different location, set `COWPEA_ROOT` to an absolute path. Shell scripts use `$HOME` and R uses `path.expand()` so the home-directory shortcut is expanded correctly. Download current climate rasters to `climate/current/`; future climate manifests use their documented public URLs. Slurm partitions and module commands must match your execution environment. R package versions are recorded in the supplied session files. Python scripts require NumPy and pandas where imported; genome analyses require PLINK, GEMMA and ADMIXTURE; raster processing requires GDAL.
+Requires R with adegenet, ade4, pegas, vegan, adespatial, spdep, geosphere, data.table, jsonlite, topGO and gradientForest; PLINK 1.9; GEMMA 0.98.5; and ADMIXTURE 1.3.0. Recorded R package versions accompany the data.
 
-## Analysis order
+## 1. Population structure
 
-1. Use `environment_460.csv` and `analysis_panel_460_metadata.csv` with the PLINK files in `genotype_rebuild_460_20261014`. Join by accession ID, never by row position. Southern monthly values are already shifted by six months: do not shift them again.
-2. Structure: use `structure_LD02.prune.in`, `genetic_structure_verified_460/run_genetic_pca.R` and `admixture/` scripts. To rebuild the PCA input, export the pruned SNPs from the final PLINK files as VCF, keeping allele order; the PCA script takes VCF, two-column keep file, and output prefix. The supplied assignment table uses K=3 and Q >= 0.70.
-3. Differentiation: run `genetic_differentiation_verified_460/calculate_fst.py` from the project root. Its `input/` directory expects links to the final PLINK files and `structure_LD02.prune.in` from the genotype folder; copies are omitted to avoid duplicating data.
-4. RDA: run `run_rda.R`, `finish_rda.R` and `screen_candidates_3SD.R` from `rda_verified_460/`. Aligned inputs and the independent PLINK export are included. Outliers use +/-3 SD. Intermediate fitted RDS objects are regenerated.
-5. eGWAS: in `egwas_verified_460/`, run kinship, the 92 association tasks, `009_post_gwas.sh`, and `parse_gwas.R`; then prepare tag inputs, calculate LD, select tags and map genes. Create `audit/`, `kinship/` and `results/` if absent. Full scan results are regenerated, not deposited. Per-trait and across-92 thresholds remain distinct; tags use r2 > 0.20 within 1 Mb on the same chromosome.
-6. Compare candidates using `candidate_overlap_verified_460/` and build shared-gene tables using `shared_candidate_genes_460/`. Intermediate files needed by downstream table scripts are generated in the preceding steps.
-7. GO: run `go_window20kb/map_candidates.py`; the approved foreground/background lists are under `topGO/combined/inputs/without_simple_*`. Run `run_without_simple.R` from that folder. It pools pRDA and per-trait eGWAS genes within +/-20 kb and excludes simple RDA. `prepare_union.py` documents gene-set construction but also generates the historical all-three comparison; use only the approved `without_simple` lists for the reported enrichment. topGO P values are nominal, not FDR-controlled discoveries.
-8. Offset: in `GF_validation_design_review/`, run `run_comparison.R` with tasks 0-17, then the projection scripts. A small cached transformation and canonical raster-cell addresses are supplied for the site projection; full fitted forests are not bundled. Tasks 0, 6 and 12 fit full-data models; remaining tasks reproduce the completed geographic holdouts. Climate manifests specify source URLs, selected bands and the six-month future-data shift. Download/prepare climate rasters from those sources; they are intentionally not bundled. `prepare_landscape.R` also requires the baseline extraction produced by the original climate audit, which is supplied. Offset represents exploratory genomic mismatch, not demonstrated loss of fitness.
+- `1-Population_structure/1PCA.sh` exports the 4,194 LD-pruned markers and calls `2PCA.R`: mean replacement of missing values, allele-frequency scaling and ade4 PCA.
+- `3ADMIXTURE.sh`: K = 1–10, ten replicates and fivefold cross-validation. Final K = 3 assignments at Q ≥ 0.70 are deposited; run selection and label alignment scripts are omitted.
 
-## Scope
+```sh
+bash 1-Population_structure/1PCA.sh
+bash 1-Population_structure/3ADMIXTURE.sh prepare
+for task in $(seq 0 99); do bash 1-Population_structure/3ADMIXTURE.sh "$task"; done
+```
 
-This is a minimal analysis/data deposit, not an archive of every intermediate file or every figure layout. Saved models, full association scans, raster products, older datasets, manuscript copies and historical plot revisions remain in the private working archive. Core inputs and key results are supplied; a full clean-environment model rerun has not been performed during packaging. Scripts retain recorded analysis assumptions and may require environment/path setup. The original broad package is superseded for deposition by this minimal package.
+## 2. Redundancy analysis
 
-Original genotype resource: https://doi.org/10.6086/D19Q37. Passport/environment records were supplied through IITA. Retain attribution and confirm redistribution terms for cowpea annotation, GO mappings and climate data before public release. Private code repository: https://github.com/OluwafemiAlaba/cowpea-local-adaptation. The Dryad data archive remains local; code license and Dryad DOI are pending.
+`1RDA.R` uses 20,027 pruned SNPs, mode imputation and SNP standardization. It screens climate predictors, selects spatial MEMs, fits simple RDA and pRDA, and partitions variation. pRDA conditions on genetic PC1–PC4 and selected MEMs. `2Outliers.R` screens supported axes at **±3 SD** and assigns putative candidates to their strongest climate correlation.
 
-Corresponding author: Daniel Koenig, dkoenig@ucr.edu.
-The authors declare no competing interests.
+```sh
+Rscript 2-RDA/1RDA.R
+Rscript 2-RDA/2Outliers.R
+```
+
+## 3. Environmental GWAS
+
+`1GEMMA.sh` calculates centered kinship and runs 92 mixed models. `2Parse.R` uses likelihood-ratio P values at **0.05/41,654 per trait** and **0.05/(41,654 × 92) across all scans**. The P < 0.0001 extract is only an intermediate.
+
+`3LD.sh` calculates LD. `4Tags.R` groups each lowest-P SNP with its directly linked significant neighbours: same chromosome, **distance <1 Mb and r² >0.20**. Singletons are retained; LD is checked against observed genotypes.
+
+```sh
+bash 3-eGWAS/1GEMMA.sh kinship
+for trait in $(seq 1 92); do bash 3-eGWAS/1GEMMA.sh "$trait"; done
+Rscript 3-eGWAS/2Parse.R
+bash 3-eGWAS/3LD.sh
+Rscript 3-eGWAS/4Tags.R
+```
+
+The ADMIXTURE and GEMMA loops can instead run as Slurm arrays, with indices 0–99 and 1–92, respectively.
+
+## 4. Candidate genes and GO enrichment
+
+`1Candidate_genes.R` pools pRDA and per-trait eGWAS genes within **±20 kb** of candidate SNPs, excluding simple RDA. Background genes use the same window around all tested array SNPs. Genes are deduplicated. `2topGO.R` tests Biological Process terms using elim Fisher tests; nominal P values are exploratory, and adjusted values are retained separately.
+
+```sh
+Rscript 4-Gene_enrichment/1Candidate_genes.R
+Rscript 4-Gene_enrichment/2topGO.R
+```
+
+## 5. Genomic offset
+
+`1GradientForest.R` fits the three recorded candidate sets using 500 trees, mtry = 2 and seeds 460, 1460 and 2460. The six predictors are prec_08, prec_01, bio_15, bio_3, tmin_10 and bio_19. `2Genomic_offset.R` calculates Euclidean distances between current and future transformed climates for 348 collection locations, three GCMs, three SSPs and three periods, and flags predictors outside sampled ranges.
+
+```sh
+Rscript 5-Genomic_offset/1GradientForest.R
+Rscript 5-Genomic_offset/2Genomic_offset.R
+```
+
+The supplied future tables are already extracted and aligned. Southern monthly values use a six-month shift (January corresponds to July); **do not shift these tables again**. Bioclimatic variables are not shifted. Offset is an exploratory measure of genomic mismatch, not a measured loss of fitness.
+
+## Scope and checks
+
+Set `COWPEA_USE_DEPOSITED=1` to allow available deposited intermediates when new results are absent. RDA outlier screening requires the state saved by `1RDA.R`; topGO requires lists from `1Candidate_genes.R`. Raster downloads, figure rendering and optional checks are omitted.
+
+The simplified candidate screening, eGWAS parsing, tag grouping, GO gene mapping and site-offset calculations were compared with saved results. A complete refit of all models was not performed for this code revision. Original scripts remain in Git history.
+
+Genotype resource: [UCR cowpea data](https://doi.org/10.6086/D19Q37). Tag grouping follows the stated cowpea LD criterion informed by [Fiscus et al. (2024)](https://doi.org/10.1093/g3journal/jkae071). GO code retains the topGO approach adapted from Christopher Fiscus's original script.
