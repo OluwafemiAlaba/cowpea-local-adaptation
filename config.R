@@ -11,7 +11,7 @@ output <- function(stage, ...) {
   dir.create(dirname(p), recursive=TRUE, showWarnings=FALSE)
   p
 }
-# Explicit opt-in lets a single downstream step use the deposited results.
+# Use saved results when COWPEA_USE_DEPOSITED=1.
 result <- function(stage, ...) {
   p <- output(stage, ...)
   if (!file.exists(p) && Sys.getenv('COWPEA_USE_DEPOSITED') == '1') p <- input(stage, ...)

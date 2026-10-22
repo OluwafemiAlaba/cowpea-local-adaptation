@@ -8,7 +8,7 @@ expected <- read.table(keepfile,stringsAsFactors=FALSE)[,2]
 loci <- pegas::read.vcf(vcf)
 genos <- pegas::loci2genind(loci,ploidy=2)
 stopifnot(!anyDuplicated(indNames(genos)),setequal(indNames(genos),expected),nInd(genos)==length(expected))
-# Match the historical PCA method: allele-frequency scaling with mean NA replacement,
+# Scale by allele frequency and replace missing values with the mean,
 # followed by ade4 PCA with no additional centring or scaling.
 X <- adegenet::scaleGen(genos,NA.method='mean')
 stopifnot(all(is.finite(X)))

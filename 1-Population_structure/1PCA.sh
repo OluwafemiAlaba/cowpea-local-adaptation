@@ -1,5 +1,5 @@
 #!/bin/bash
-# Export the 4,194 LD-pruned markers, then apply the original genetic PCA method.
+# Export 4,194 LD-pruned SNPs for genetic PCA.
 source ./config.sh
 out="$COWPEA_OUTPUT/structure"
 mkdir -p "$out"

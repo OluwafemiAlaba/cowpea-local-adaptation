@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-# Summarize the 92 GEMMA scans with the original likelihood-ratio P value.
+# Summarize 92 GEMMA scans using likelihood-ratio P values.
 source('config.R')
 traits <- readLines(input('egwas', 'input/trait_names.txt'))
 stopifnot(length(traits)==92, !anyDuplicated(traits))

@@ -1,5 +1,6 @@
 #!/usr/bin/env Rscript
-# topGO biological processes; elim Fisher P values are exploratory nominal evidence.
+# Biological Process enrichment using topGO elim Fisher tests.
+# Adapted from Christopher Fiscus's topGO script.
 source('config.R')
 suppressPackageStartupMessages(library(topGO))
 dir.create(output('go','results'),recursive=TRUE,showWarnings=FALSE)
@@ -19,7 +20,7 @@ for (s in sets) {
  go <- new('topGOdata',description=s,ontology='BP',allGenes=selected,
            geneSelectionFun=function(x)x==1,annot=annFUN.gene2GO,
            gene2GO=map[names(map)%in%bg],nodeSize=1)
- # Explicit historical elim default: child terms with P < .01 are eliminated upstream.
+ # Eliminate genes from ancestor tests when a child term has P < .01.
  elim <- runTest(go,algorithm='elim',statistic='fisher',cutOff=0.01)
  classic <- runTest(go,algorithm='classic',statistic='fisher')
  p <- score(elim); ids <- names(p)

@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-# Full-data Gradient Forest fits for the three candidate sets and three recorded seeds.
+# Fit Gradient Forest to three candidate SNP sets using three random seeds.
 source('config.R')
 suppressPackageStartupMessages(library(gradientForest))
 env<-read.csv(input('gf','comparison_input/environment_six.csv'),check.names=FALSE)

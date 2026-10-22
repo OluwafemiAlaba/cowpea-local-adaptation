@@ -109,7 +109,7 @@ covars<-cbind(P,S);C<-as.matrix(covars)
 stopifnot(qr(cbind(1,C))$rank==ncol(C)+1)
 logmsg('Selected',ncol(S),'MEMs; climate screen retains',ncol(X),'predictors')
 
-# Climate selection is conditional on geography AND the same four genetic PCs
+# Select climate predictors conditional on geography and genetic PC1-PC4.
 null<-rda(Ysmall~1+Condition(C),data=X,scale=FALSE)
 global<-rda(Ysmall~.+Condition(C),data=X,scale=FALSE)
 global_test<-anova(global,permutations=9999)
